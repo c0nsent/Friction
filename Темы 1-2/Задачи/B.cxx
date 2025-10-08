@@ -1,45 +1,37 @@
 #include <array>
-#include <cstdint>
+#include <fstream>
 #include <iomanip>
-#include <iostream>
 
-static auto readInput(std::istream &is = std::cin)
+
+auto readInput( const char *path ) -> std::array<double, 6>
 {
-	std::array<long double, 6> x{};
-	for (auto &e : x) is >> e;
-	return x;
+	std::ifstream ifs( path );
+
+	std::array<double, 6> out{};
+
+	for ( size_t i{ 0 }; i != 6; ++i )
+		ifs >> out[i];
+
+	return out;
 }
 
-static long double seg(long double d, long double s)
+double calcMinTime( const std::array<double, 6> &arr )
 {
-	return d / s;
+	const auto &[ a, b, c, v0, v1, v2 ] = arr;
+
+	const double minA{ std::min( a, b + c ) };
+	const double minB{ std::min( b, a + c ) };
+	const double minC{  std::min( c, a + b ) };
+
+	double minTime{ minA / v0 + minA / v1 + minB / v0 + minB / v1 };
+	minTime = std::min( minTime, minA / v0 + minC / v1 + minB / v2 );
+	minTime = std::min( minTime, minB/v0 + minC / v1 + minA /v2 );
+
+	return minTime;
 }
 
 int main()
 {
-	const auto [a,b,c, v0,v1,v2]{ readInput(std::cin) };
-
-	const long double variants[][6] = {
-		{ a, v0,  c, v1,  b, v2 },
-		{ b, v0,  c, v1,  a, v2 },
-		{ a, v0,  a, v1,  b, v0 },
-		{ b, v0,  b, v1,  a, v0 },
-		{ a, v0,  c, v1,  b, v2 },
-		{ b, v0,  c, v1,  a, v2 }
-	};
-
-	long double ans{ std::numeric_limits<long double>::infinity() };
-
-	for (int i = 0; i < 6; ++i)
-	{
-		long double t = seg(variants[i][0], variants[i][1])
-									+ seg(variants[i][2], variants[i][3])
-									+ seg(variants[i][4], variants[i][5]);
-		if (i == 4) t += seg(a, v0);
-		if (i == 5) t += seg(b, v0);
-		if (t < ans) ans = t;
-	}
-
-	std::cout.setf(std::ios::fixed);
-	std::cout << std::setprecision(15) << ans;
+	std::ofstream ofs("output.txt");
+	ofs << std::fixed << std::setprecision(20) << calcMinTime( readInput("input.txt") );
 }
